@@ -34,14 +34,17 @@ Explicación de los parámetros:
 - --report-interval: segundos entre informes de progreso (intentos/s, etc.).
 ## Mejoras & Pruebas
 ### Dockerfile
-He creado un Dockerfile con una configuración que usa una imagen mínima python:3.12-slim con solo lo necesario (gpg, tini), 
-habilita GnuPG en modo loopback (sin UI) y ejecuta con tini como init para manejar señales y evitar zombis.
-Además, el wrapper run.sh copia el objetivo a /dev/shm (RAM) para reducir latencia de E/S 
-y lanza el script con exec, lo que mejora la parada inmediata cuando se encuentra la clave.
+He preparado un Dockerfile mínimo basado en python:3.12-slim que instala solo lo imprescindible (gnupg, tini y utilidades básicas), configura GnuPG en modo loopback (sin UI) 
+y arranca con tini como init para manejar señales y evitar procesos zombis. Un wrapper (/app/run.sh) copia el fichero objetivo a /dev/shm (RAM) para reducir la latencia de E/S y ejecuta el script con exec,
+de modo que la parada al encontrar la clave es inmediata. 
 
-En la siguiente captura se ve /dev/shm montado como tmpfs (4 GB) con límites altos de procesos/FDs, ejecución con jobs=32 y chunk=32 (equilibrio entre throughput y reacción), 
-un ritmo estable de ≈98–111 intentos/s y hallazgo de la pass 'drgs' en 610.86 s tras ≈63 819 intentos, confirmando que el diseño es eficiente, reproducible y orientado a rendimiento.
-   <img width="795" height="446" alt="imagen" src="https://github.com/user-attachments/assets/c23859a3-7fd9-42e3-b759-e15bb3ceeebd" />
+En la ejecución de la captura limito CPU y memoria del contenedor (--cpus="$(nproc)", --memory=2g, --memory-swap=2g, --memory-reservation=1g) y monto /dev/shm como tmpfs de 1 GiB
+En esta situación lanzó mi programa con jobs=32 y chunk=32 (equilibrio throughput/latencia), mostrando un ritmo estable de ≈100–108 intentos/s y encontrando la pass 'drgs' en 618.63 s tras ≈63.8 k intentos, 
+lo que confirma un diseño eficiente, reproducible y orientado a rendimiento:
+
+   <img width="803" height="579" alt="imagen" src="https://github.com/user-attachments/assets/d04409a7-6d65-4591-905e-2f1ffae6fec4" />
+
+### Prueba en RAM
 
    
 # ¿Por qué he optado por esta implementación?
